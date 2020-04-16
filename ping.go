@@ -71,6 +71,8 @@ var (
 	ipv6Proto = map[string]string{"ip": "ip6:ipv6-icmp", "udp": "udp6"}
 )
 
+var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 // NewPinger returns a new Pinger struct pointer
 func NewPinger(addr string) (*Pinger, error) {
 	ipaddr, err := net.ResolveIPAddr("ip", addr)
@@ -85,18 +87,17 @@ func NewPinger(addr string) (*Pinger, error) {
 		ipv4 = false
 	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &Pinger{
 		ipaddr:   ipaddr,
 		addr:     addr,
 		Interval: time.Second,
 		Timeout:  time.Second * 100000,
 		Count:    -1,
-		id:       r.Intn(math.MaxInt16),
+		id:       random.Intn(math.MaxInt16),
 		network:  "udp",
 		ipv4:     ipv4,
 		Size:     timeSliceLength,
-		Tracker:  r.Int63n(math.MaxInt64),
+		Tracker:  random.Int63n(math.MaxInt64),
 		done:     make(chan bool),
 	}, nil
 }
@@ -215,6 +216,23 @@ type Statistics struct {
 	// StdDevRtt is the standard deviation of the round-trip times sent via
 	// this pinger.
 	StdDevRtt time.Duration
+}
+
+func (p *Pinger) Reset(addr string) (err error) {
+	err = p.SetAddr(addr)
+	if err != nil {
+		return
+	}
+
+	p.id = random.Intn(math.MaxInt16)
+	p.done = make(chan bool)
+	p.Tracker = random.Int63n(math.MaxInt64)
+	p.PacketsSent = 0
+	p.PacketsRecv = 0
+	p.rtts = p.rtts[:0]
+	p.sequence = 0
+
+	return
 }
 
 // SetIPAddr sets the ip address of the target host.
