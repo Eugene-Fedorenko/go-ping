@@ -235,6 +235,17 @@ func (p *Pinger) Reset(addr string) (err error) {
 	return
 }
 
+func (p *Pinger) ResetIPAddr(ipAddr *net.IPAddr) {
+	p.SetIPAddr(ipAddr)
+	p.id = random.Intn(math.MaxInt16)
+	p.done = make(chan bool)
+	p.Tracker = random.Int63n(math.MaxInt64)
+	p.PacketsSent = 0
+	p.PacketsRecv = 0
+	p.rtts = p.rtts[:0]
+	p.sequence = 0
+}
+
 // SetIPAddr sets the ip address of the target host.
 func (p *Pinger) SetIPAddr(ipaddr *net.IPAddr) {
 	var ipv4 bool
