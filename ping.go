@@ -71,8 +71,6 @@ var (
 	ipv6Proto = map[string]string{"ip": "ip6:ipv6-icmp", "udp": "udp6"}
 )
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 // NewPinger returns a new Pinger struct pointer
 func NewPinger(addr string) (*Pinger, error) {
 	ipaddr, err := net.ResolveIPAddr("ip", addr)
@@ -87,6 +85,8 @@ func NewPinger(addr string) (*Pinger, error) {
 		ipv4 = false
 	}
 
+	var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	return &Pinger{
 		ipaddr:   ipaddr,
 		addr:     addr,
@@ -99,6 +99,7 @@ func NewPinger(addr string) (*Pinger, error) {
 		Size:     timeSliceLength,
 		Tracker:  random.Int63n(math.MaxInt64),
 		done:     make(chan bool),
+		random:   random,
 	}, nil
 }
 
@@ -148,6 +149,8 @@ type Pinger struct {
 
 	ipaddr *net.IPAddr
 	addr   string
+
+	random *rand.Rand
 
 	ipv4     bool
 	size     int
@@ -224,9 +227,9 @@ func (p *Pinger) Reset(addr string) (err error) {
 		return
 	}
 
-	p.id = random.Intn(math.MaxInt16)
+	p.id = p.random.Intn(math.MaxInt16)
 	p.done = make(chan bool)
-	p.Tracker = random.Int63n(math.MaxInt64)
+	p.Tracker = p.random.Int63n(math.MaxInt64)
 	p.PacketsSent = 0
 	p.PacketsRecv = 0
 	p.rtts = p.rtts[:0]
@@ -237,9 +240,9 @@ func (p *Pinger) Reset(addr string) (err error) {
 
 func (p *Pinger) ResetIPAddr(ipAddr *net.IPAddr) {
 	p.SetIPAddr(ipAddr)
-	p.id = random.Intn(math.MaxInt16)
+	p.id = p.random.Intn(math.MaxInt16)
 	p.done = make(chan bool)
-	p.Tracker = random.Int63n(math.MaxInt64)
+	p.Tracker = p.random.Int63n(math.MaxInt64)
 	p.PacketsSent = 0
 	p.PacketsRecv = 0
 	p.rtts = p.rtts[:0]
